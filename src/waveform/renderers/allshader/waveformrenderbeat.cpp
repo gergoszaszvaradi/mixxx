@@ -1,14 +1,17 @@
 #include "waveform/renderers/allshader/waveformrenderbeat.h"
 
+#include <QtGui/qvectornd.h>
+
 #include <QDomNode>
 
 #include "moc_waveformrenderbeat.cpp"
 #include "rendergraph/geometry.h"
-#include "rendergraph/material/unicolormaterial.h"
-#include "rendergraph/vertexupdaters/vertexupdater.h"
+#include "rendergraph/material/rgbamaterial.h"
+#include "rendergraph/vertexupdaters/rgbavertexupdater.h"
 #include "skin/legacy/skincontext.h"
 #include "track/track.h"
 #include "waveform/renderers/waveformwidgetrenderer.h"
+#include "waveform/waveformwidgetfactory.h"
 #include "widget/wskincolor.h"
 
 using namespace rendergraph;
@@ -19,8 +22,12 @@ WaveformRenderBeat::WaveformRenderBeat(WaveformWidgetRenderer* waveformWidget,
         ::WaveformRendererAbstract::PositionSource type)
         : ::WaveformRendererAbstract(waveformWidget),
           m_isSlipRenderer(type == ::WaveformRendererAbstract::Slip) {
-    initForRectangles<UniColorMaterial>(0);
+    initForRectangles<RGBAMaterial>(0);
     setUsePreprocess(true);
+
+    auto pNode = std::make_unique<DigitsRenderNode>();
+    m_pDigitsRenderNode = pNode.get();
+    appendChildNode(std::move(pNode));
 }
 
 void WaveformRenderBeat::setup(const QDomNode& node, const SkinContext& skinContext) {
@@ -108,8 +115,34 @@ bool WaveformRenderBeat::preprocessInner() {
     const int reserved = numBeatsInRange * numVerticesPerLine;
     geometry().allocate(reserved);
 
-    VertexUpdater vertexUpdater{geometry().vertexDataAs<Geometry::Point2D>()};
+    RGBAVertexUpdater vertexUpdater{geometry().vertexDataAs<Geometry::RGBAColoredPoint2D>()};
+    QVector4D beatColor{
+            m_color.red() / 255.0f,
+            m_color.green() / 255.0f,
+            m_color.blue() / 255.0f,
+            m_color.alpha() / 255.0f};
+    QVector4D barColor{
+            255 / 255.0f,
+            255 / 255.0f,
+            0 / 255.0f,
+            m_color.alpha() / 255.0f};
+    QVector4D phraseColor{
+            255 / 255.0f,
+            0 / 255.0f,
+            0 / 255.0f,
+            m_color.alpha() / 255.0f};
 
+    int beatIndex = trackBeats->iteratorFrom(startPosition) - trackBeats->iteratorFrom(mixxx::audio::FramePos(0.0));
+    const auto m_untilMarkTextSize =
+            WaveformWidgetFactory::instance()->getUntilMarkTextPointSize();
+    const auto untilMarkTextHeightLimit =
+            WaveformWidgetFactory::instance()
+                    ->getUntilMarkTextHeightLimit();
+    m_pDigitsRenderNode->clear();
+    m_pDigitsRenderNode->updateTexture(m_waveformRenderer->getContext(),
+            m_untilMarkTextSize,
+            std::roundf(rendererBreadth * untilMarkTextHeightLimit),
+            m_waveformRenderer->getDevicePixelRatio());
     for (auto it = trackBeats->iteratorFrom(startPosition);
             it != trackBeats->cend() && *it <= endPosition;
             ++it) {
@@ -123,14 +156,35 @@ bool WaveformRenderBeat::preprocessInner() {
         const float x1 = static_cast<float>(xBeatPoint);
         const float x2 = x1 + 1.f;
 
-        vertexUpdater.addRectangle({x1, 0.f},
-                {x2, m_isSlipRenderer ? rendererBreadth / 2 : rendererBreadth});
+        if (beatIndex % 16 == 0) {
+            vertexUpdater.addRectangle({x1 - 2.0f, 0.f},
+                    {x2 + 2.0f, m_isSlipRenderer ? rendererBreadth / 2 : rendererBreadth},
+                    phraseColor);
+        } else if (beatIndex % 4 == 0) {
+            vertexUpdater.addRectangle({x1 - 1.0f, 0.f},
+                    {x2 + 1.0f, m_isSlipRenderer ? rendererBreadth / 2 : rendererBreadth},
+                    barColor);
+        } else {
+            vertexUpdater.addRectangle({x1, 0.f},
+                    {x2, m_isSlipRenderer ? rendererBreadth / 2 : rendererBreadth},
+                    beatColor);
+        }
+        if (beatIndex >= 0 && beatIndex % 4 == 0) {
+            m_pDigitsRenderNode->update(
+                    x1 + 4.0f,
+                    0.0f,
+                    false,
+                    QString::number(beatIndex / 4),
+                    QString{},
+                    true);
+        }
+
+        ++beatIndex;
     }
     markDirtyGeometry();
 
     DEBUG_ASSERT(reserved == vertexUpdater.index());
 
-    material().setUniform(1, m_color);
     markDirtyMaterial();
 
     return true;

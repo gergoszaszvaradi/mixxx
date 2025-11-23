@@ -27,7 +27,8 @@ class allshader::DigitsRenderNode : public rendergraph::GeometryNode {
             float y,
             bool multiLine,
             const QString& s1,
-            const QString& s2);
+            const QString& s2,
+            bool append = false);
 
     void clear();
 

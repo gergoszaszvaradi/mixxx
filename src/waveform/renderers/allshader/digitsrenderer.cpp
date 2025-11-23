@@ -221,11 +221,13 @@ void allshader::DigitsRenderNode::update(
         float y,
         bool multiLine,
         const QString& s1,
-        const QString& s2) {
+        const QString& s2,
+        bool append) {
     const int numVerticesPerRectangle = 6;
     const int reserved = (s1.length() + s2.length()) * numVerticesPerRectangle;
-    geometry().allocate(reserved);
-    TexturedVertexUpdater vertexUpdater{geometry().vertexDataAs<Geometry::TexturedPoint2D>()};
+    const int currentVertexCount = geometry().vertexCount();
+    geometry().allocate(reserved + (append ? currentVertexCount : 0));
+    TexturedVertexUpdater vertexUpdater{geometry().vertexDataAs<Geometry::TexturedPoint2D>() + (append ? currentVertexCount : 0)};
 
     const float ch = height();
     if (!s1.isEmpty()) {

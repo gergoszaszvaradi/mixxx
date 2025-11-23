@@ -1,0 +1,55 @@
+{ pkgs ? import <nixpkgs> {} }:
+  pkgs.mkShell {
+    buildInputs = [
+      pkgs.cmake
+      pkgs.pkg-config
+
+      pkgs.chromaprint
+      pkgs.faad2
+      pkgs.ffmpeg
+      pkgs.fftw
+      pkgs.flac
+      pkgs.gbenchmark
+      pkgs.glibcLocales
+      pkgs.gtest
+      pkgs.hidapi
+      pkgs.lame
+      pkgs.libebur128
+      pkgs.libGLU
+      pkgs.libid3tag
+      pkgs.libdjinterop
+      pkgs.libkeyfinder
+      pkgs.libmad
+      pkgs.libmodplug
+      pkgs.libopus
+      pkgs.libsecret
+      pkgs.libshout
+      pkgs.libsndfile
+      pkgs.libusb1
+      pkgs.libvorbis
+      pkgs.xorg.libxcb
+      pkgs.lilv
+      pkgs.lv2
+      pkgs.microsoft-gsl
+      pkgs.mp4v2
+      pkgs.opusfile
+      pkgs.portaudio
+      pkgs.portmidi
+      pkgs.protobuf
+      pkgs.kdePackages.qt5compat
+      pkgs.kdePackages.qtbase
+      pkgs.kdePackages.qtdeclarative
+      pkgs.kdePackages.qtkeychain
+      pkgs.kdePackages.qtsvg
+      pkgs.rubberband
+      pkgs.serd
+      pkgs.sord
+      pkgs.soundtouch
+      pkgs.sratom
+      pkgs.sqlite
+      pkgs.taglib
+      pkgs.upower
+      pkgs.vamp-plugin-sdk
+      pkgs.wavpack
+    ];
+}

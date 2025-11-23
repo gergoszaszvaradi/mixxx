@@ -2,6 +2,7 @@
 
 #include <QColor>
 
+#include "digitsrenderer.h"
 #include "rendergraph/geometrynode.h"
 #include "util/class.h"
 #include "waveform/renderers/waveformrendererabstract.h"
@@ -39,6 +40,7 @@ class allshader::WaveformRenderBeat final
   private:
     QColor m_color;
     bool m_isSlipRenderer;
+    DigitsRenderNode* m_pDigitsRenderNode{};
 
     bool preprocessInner();
 
